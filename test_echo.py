@@ -1,6 +1,7 @@
 import echo_server
 import echo_client
 import pytest
+import socket
 
 
 @pytest.fixture(scope='function')
