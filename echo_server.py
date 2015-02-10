@@ -20,3 +20,9 @@ def receive(conn):
     print conn.recv(32)
     conn.sendall('reply')
     conn.close()
+
+
+if __name__ == '__main__':
+    server_socket = create_server_socket()
+    conn, addr = comm(server_socket)
+    receive(conn)
