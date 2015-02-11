@@ -6,18 +6,10 @@ def create_server_socket():
         socket.AF_INET,
         socket.SOCK_STREAM,
         socket.IPPROTO_IP)
-    return server_socket
-
-
-def comm(server_socket):
+    # Set up the socket
     server_socket.bind(('127.0.0.1', 50000))
     server_socket.listen(1)
-    conn, addr = server_socket.accept()
-    return conn, addr
-
-
-def receive(conn):
-    return conn.recv(32)
+    return server_socket
 
 
 if __name__ == '__main__':
@@ -25,24 +17,19 @@ if __name__ == '__main__':
 
     server_socket = create_server_socket()
 
-    conn, addr = comm(server_socket)
+    while True:
+        conn, addr = server_socket.accept()
 
-    # try:
-    # while True:
-    message = ''
-    keep_going = True
-    while keep_going:
-        pkt = receive(conn)
-        message = '{}{}'.format(message, pkt)
+        message = ''
+        keep_going = True
+        while keep_going:
+            pkt = conn.recv(buffsize)
+            print repr(pkt)
+            message = '{}{}'.format(message, pkt)
 
-        print message
-        print len(message)
-        # For a last packet of buffsize, it iterates one more time
-        if len(pkt) < buffsize:
-            keep_going = False
-    conn.sendall(message)
-
-    # Allow stopping server in console with KeyboardInterrupt
-    # except KeyboardInterrupt:
-    #     conn.close()
-    #     server_socket.close()
+            # For a last packet of buffsize, this loop iterates one more time
+            if (len(pkt) < buffsize) or (len(pkt) == 0):
+                keep_going = False
+                print keep_going
+        conn.sendall(message)
+        conn.close()
