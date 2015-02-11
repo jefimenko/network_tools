@@ -17,12 +17,32 @@ def comm(server_socket):
 
 
 def receive(conn):
-    print conn.recv(32)
-    conn.sendall('reply')
-    conn.close()
+    return conn.recv(32)
 
 
 if __name__ == '__main__':
+    buffsize = 8
+
     server_socket = create_server_socket()
+
     conn, addr = comm(server_socket)
-    receive(conn)
+
+    # try:
+    # while True:
+    message = ''
+    keep_going = True
+    while keep_going:
+        pkt = receive(conn)
+        message = '{}{}'.format(message, pkt)
+
+        print message
+        print len(message)
+        # For a last packet of buffsize, it iterates one more time
+        if len(pkt) < buffsize:
+            keep_going = False
+    conn.sendall(message)
+
+    # Allow stopping server in console with KeyboardInterrupt
+    # except KeyboardInterrupt:
+    #     conn.close()
+    #     server_socket.close()
