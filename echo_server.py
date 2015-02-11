@@ -12,6 +12,18 @@ def create_server_socket():
     return server_socket
 
 
+def response_ok():
+    pass
+
+
+def response_error():
+    pass
+
+
+def parse_request():
+    pass
+
+
 if __name__ == '__main__':
     buffsize = 8
 
