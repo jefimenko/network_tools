@@ -1,4 +1,5 @@
 import socket
+import email.utils
 
 
 def create_server_socket():
@@ -13,14 +14,19 @@ def create_server_socket():
 
 
 def response_ok():
-    pass
+    return """
+        HTTP/1.1 200 OK\r\n
+        Content-Type: text/plain\r\n
+        \r\n
+        Hey you.\r\n
+    """
 
 
 def response_error():
     pass
 
 
-def parse_request():
+def parse_request(request_string):
     pass
 
 
