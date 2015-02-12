@@ -11,10 +11,9 @@ def test_ok():
 
 
 def test_error():
-    assert response_error(ValueError('403', "You're not allowed.")) == """
+    assert """
         HTTP/1.1 403\r\n
-        \r\n
-    """
+    """ in response_error(ValueError('403', "You're not allowed."))
 
 
 def test_parse():
