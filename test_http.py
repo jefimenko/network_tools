@@ -11,8 +11,8 @@ def test_ok():
 
 
 def test_error():
-    assert response_error(404) == """
-        HTTP/1.1 404\r\n
+    assert response_error(ValueError('403', "You're not allowed.")) == """
+        HTTP/1.1 403\r\n
         \r\n
     """
 
