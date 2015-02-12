@@ -1,4 +1,5 @@
 from echo_server import create_server_socket, response_ok, response_error, parse_request
+import pytest
 
 
 def test_ok():
@@ -26,5 +27,10 @@ some body\r\n\
 """
     assert parse_request(test_string) == "some_uri"
     # Bad protocol case
-
+    with pytest.raises(ValueError):
+        parse_request("POST asdf HTTP/1.1")
     # Non-GET case
+    with pytest.raises(ValueError):
+        parse_request("GET asdf HTTP/1.0")
+    # Something that's not even a request.
+    assert isinstance(parse_request('too short'), type(None))
