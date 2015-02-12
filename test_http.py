@@ -11,8 +11,21 @@ def test_ok():
 
 
 def test_error():
-    assert response_error()
+    assert response_error(404) == """
+        HTTP/1.1 404\r\n
+        \r\n
+    """
 
 
 def test_parse():
-    assert parse_request('hello')
+    # Working case
+    test_string = """
+        GET some_uri HTTP/1.1\r\n
+        some head\r\n
+        \r\n
+        some body\r\n
+    """
+    assert parse_request(test_string) == "some_uri"
+    # Bad protocol case
+
+    # Non-GET case
