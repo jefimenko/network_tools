@@ -1,5 +1,4 @@
 import socket
-import email.utils
 
 
 def create_server_socket():
@@ -22,12 +21,30 @@ def response_ok():
     """
 
 
-def response_error():
-    pass
+def response_error(e):
+    return """
+        HTTP/1.1 {error}\r\n
+        \r\n
+    """.format(error=e.args[0])
 
 
 def parse_request(request_string):
-    pass
+    first_line = request_string.split('\r\n')[0]
+    first_line = first_line.split()
+
+    if request_protocol_validator(first_line):
+        return first_line[1]
+
+
+def request_protocol_validator(first_line):
+    method, protocol = first_line[0], first_line[2]
+    if method != 'GET':
+        raise ValueError('403', 'GET method only.')
+    if protocol != 'HTTP/1.1':
+        raise ValueError('403', 'HTTP/1.1 only.')
+
+    if method == 'GET' and protocol == 'HTTP/1.1':
+        return True
 
 
 if __name__ == '__main__':
