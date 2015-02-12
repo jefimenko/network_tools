@@ -18,7 +18,15 @@ def comm(client_socket):
 
 
 def receive(client_socket):
-    print client_socket.recv(32)
+    listening = True
+    message = ''
+    buffer_size = 32
+    while listening:
+        response = client_socket.recv(buffer_size)
+        message = '{}{}'.format(message, response)
+        if len(response) < buffer_size:
+            listening = False
+    print message
     client_socket.close()
 
 
