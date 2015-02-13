@@ -10,10 +10,10 @@ def create_client_socket():
     return client_socket
 
 
-def comm(client_socket):
+def comm(client_socket, message):
     client_socket.connect(('127.0.0.1', 50000))
     # Send argv from command line
-    client_socket.sendall(', '.join(sys.argv[1:]))
+    client_socket.sendall(', '.join(message))
     client_socket.shutdown(socket.SHUT_WR)
 
 
@@ -25,5 +25,5 @@ def receive(client_socket):
 
 if __name__ == '__main__':
     client_socket = create_client_socket()
-    comm(client_socket)
+    comm(client_socket, sys.argv[1:])
     print receive(client_socket)
