@@ -18,11 +18,12 @@ def comm(client_socket):
 
 
 def receive(client_socket):
-    print client_socket.recv(32)
+    reception = client_socket.recv(32)
     client_socket.close()
+    return reception
 
 
 if __name__ == '__main__':
     client_socket = create_client_socket()
     comm(client_socket)
-    receive(client_socket)
+    print receive(client_socket)
