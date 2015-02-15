@@ -2,6 +2,7 @@ import echo_server
 import echo_client
 import pytest
 import socket
+import threading
 
 
 @pytest.fixture(scope='function')
@@ -31,21 +32,35 @@ def test_echo_client(setup_client):
     assert setup_client
 
 
-def test_echo_client_send(setup_client):
-    pass
+def test_echo_client_send_and_recieve(setup_client, setup_server):
+    # Use threading to allow server to wait for connection while the
+    # rest of the test function runs.
+    buffsize = 8
+    t = threading.Thread(target=listener, args=(setup_server, buffsize,))
+    t.start()
 
-def test_echo_client_receive(setup_client):
-    pass
+    echo_client.comm(setup_client, 'a message')
+    message_from_server = echo_client.receive(setup_client)
+
+    assert 'a message' == message_from_server
+
+
+def listener(setup_server, buffsize):
+    conn, addr, message = echo_server.receive_msg(
+        setup_server, buffsize)
+    conn.sendall(message)
+    conn.close()
 
 
 # Server tests
 def test_echo_server(setup_server):
     assert setup_server
+    assert isinstance(setup_server, type(socket.socket()))
 
 
-def test_echo_server_send(setup_server):
+def test_echo_server_send(setup_client):
     pass
 
 
-def test_echo_server_receive(setup_server):
+def test_echo_server_receive(setup_client):
     pass
