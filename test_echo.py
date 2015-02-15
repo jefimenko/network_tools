@@ -56,11 +56,3 @@ def listener(setup_server, buffsize):
 def test_echo_server(setup_server):
     assert setup_server
     assert isinstance(setup_server, type(socket.socket()))
-
-
-def test_echo_server_send(setup_client):
-    pass
-
-
-def test_echo_server_receive(setup_client):
-    pass
