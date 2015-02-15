@@ -1,4 +1,5 @@
 import socket
+import threading
 
 
 def create_server_socket():
@@ -14,6 +15,7 @@ def create_server_socket():
 
 def receive_msg(server_socket, buffsize):
     conn, addr = server_socket.accept()
+
     message = ''
     keep_going = True
     while keep_going:
@@ -40,9 +42,17 @@ def parse_request(header):
     except IndexError:
         pass
 
+    # When .accept() is interupted to kill the server, method will not have
+    # been bound at the point the script continues after .accept() is forced
+    # to return, UnboundLocalError needs to be handled where parse_request()
+    # is being called.
     if method != 'GET' or proto != 'HTTP/1.1':
         # Deny non-GET and non-HTTP/1.1 requests.
         raise ValueError(403, 'Forbidden')
+    if not uri:
+        # For requests that are invalid due to being too short:
+        raise ValueError(400, 'Bad Request')
+
 
     # Divide headers by line
     try:
@@ -68,18 +78,20 @@ HTTP/1.1 {type} {cause}\r\n\
     return response
 
 
-if __name__ == '__main__':
+def main(event):
     buffsize = 8
 
     server_socket = create_server_socket()
 
-    while True:
+    while event.isSet():
         conn, addr, message = receive_msg(server_socket, buffsize)
+
         # Cut up message
         message = message.split('\r\n\r\n')
         try:
-            # All assignments up until a line that causes an exception persist.
-            # Only bind symbols to parts of the request that are there.
+            # All assignments up until a line that causes an exception
+            # persist. Only bind symbols to parts of the request that
+            # exist.
             header = message[0]
             body = message[1]
             footer = message[2]
@@ -89,14 +101,44 @@ if __name__ == '__main__':
         try:
             # Parse request
             uri, headers = parse_request(header)
-            print 'check'
             formed_response = response_ok()
             # Send the appropriate message
             # OK
-        except Exception as e:
+        except ValueError as e:
             # Errors
             print e[0]
             print e[1]
+            print type(e)
             formed_response = response_error(e)
+        except UnboundLocalError as e:
+            # Close the connection and server and break out of the loop
+            # trying to send anything.
+            conn.close()
+            server_socket.close()
+            break
         conn.sendall(formed_response)
         conn.close()
+
+
+if __name__ == '__main__':
+    event = threading.Event()
+    print event.isSet()
+    event.set()
+    print event.isSet()
+
+    t = threading.Thread(target=main, args=(event,))
+    t.start()
+
+    while True:
+        try:
+            pass
+        except KeyboardInterrupt:
+            event.clear()
+            print event.isSet()
+            # Force .accept() to return.
+            socket.socket(
+                socket.AF_INET,
+                socket.SOCK_STREAM,
+                socket.IPPROTO_IP).connect(('127.0.0.1', 50000))
+            print 'checkcheck'
+            break

@@ -54,5 +54,4 @@ def listener(setup_server, buffsize):
 
 # Server tests
 def test_echo_server(setup_server):
-    assert setup_server
-    assert isinstance(setup_server, type(socket.socket()))
+    # run server
