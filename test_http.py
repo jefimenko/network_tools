@@ -70,7 +70,9 @@ def test_interaction():
     client_socket.connect(('127.0.0.1', 50000))
     client_socket.sendall('GET something HTTP/1.1\r\n')
     client_socket.shutdown(socket.SHUT_WR)
-    assert echo_client.receive(client_socket) == """\
+    m = echo_client.receive(client_socket)
+    print "client: " + m
+    assert m == """\
 HTTP/1.1 200 OK\r\n\
 """
     client_socket.close()
@@ -80,7 +82,9 @@ HTTP/1.1 200 OK\r\n\
     client_socket.connect(('127.0.0.1', 50000))
     client_socket.sendall('POST something HTTP/1.1\r\n')
     client_socket.shutdown(socket.SHUT_WR)
-    assert echo_client.receive(client_socket) == """\
+    m = echo_client.receive(client_socket)
+    print "client: " + m
+    assert m == """\
 HTTP/1.1 403 Forbidden\r\n\
 """
     client_socket.close()
@@ -90,7 +94,9 @@ HTTP/1.1 403 Forbidden\r\n\
     client_socket.connect(('127.0.0.1', 50000))
     client_socket.sendall('POST something HTTP/1.0\r\n')
     client_socket.shutdown(socket.SHUT_WR)
-    assert echo_client.receive(client_socket) == """\
+    m = echo_client.receive(client_socket)
+    print "client: " + m
+    assert m == """\
 HTTP/1.1 403 Forbidden\r\n\
 """
     client_socket.close()
@@ -100,7 +106,9 @@ HTTP/1.1 403 Forbidden\r\n\
     client_socket.connect(('127.0.0.1', 50000))
     client_socket.sendall('GET something HTTP/1.0\r\n')
     client_socket.shutdown(socket.SHUT_WR)
-    assert echo_client.receive(client_socket) == """\
+    m = echo_client.receive(client_socket)
+    print "client: " + m
+    assert m == """\
 HTTP/1.1 403 Forbidden\r\n\
 """
     client_socket.close()
@@ -110,7 +118,9 @@ HTTP/1.1 403 Forbidden\r\n\
     client_socket.connect(('127.0.0.1', 50000))
     client_socket.sendall('GET something\r\n')
     client_socket.shutdown(socket.SHUT_WR)
-    assert echo_client.receive(client_socket) == """\
+    m = echo_client.receive(client_socket)
+    print "client: " + m
+    assert m == """\
 HTTP/1.1 400 Bad Request\r\n\
 """
     client_socket.close()
@@ -119,7 +129,9 @@ HTTP/1.1 400 Bad Request\r\n\
     client_socket.connect(('127.0.0.1', 50000))
     client_socket.sendall('something HTTP/1.0\r\n')
     client_socket.shutdown(socket.SHUT_WR)
-    assert echo_client.receive(client_socket) == """\
+    m = echo_client.receive(client_socket)
+    print "client: " + m
+    assert m == """\
 HTTP/1.1 400 Bad Request\r\n\
 """
     client_socket.close()
@@ -128,12 +140,14 @@ HTTP/1.1 400 Bad Request\r\n\
     client_socket.connect(('127.0.0.1', 50000))
     client_socket.sendall('hello')
     client_socket.shutdown(socket.SHUT_WR)
-    assert echo_client.receive(client_socket) == """\
+    m = echo_client.receive(client_socket)
+    print "client: " + m
+    assert m == """\
 HTTP/1.1 400 Bad Request\r\n\
 """
     client_socket.close()
 
-    print even.isSet()
+    print event.isSet()
     event.clear()
     print event.isSet()
     # Force .accept() to return.
