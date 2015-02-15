@@ -14,13 +14,20 @@ def create_server_socket():
 
 
 def receive_msg(server_socket, buffsize):
+    """
+    Receive a string from a client.
+
+    Wait until a client connects, then keep receiving the message in chunks
+    equal to buffsize until the message is over, and return the connection,
+    address and message.
+    """
     conn, addr = server_socket.accept()
 
     message = ''
     keep_going = True
     while keep_going:
         pkt = conn.recv(buffsize)
-        print repr(pkt)
+        print 'server: ' + repr(pkt)
         message = '{}{}'.format(message, pkt)
 
         # For a last packet of buffsize, this loop iterates one more time
@@ -31,6 +38,10 @@ def receive_msg(server_socket, buffsize):
 
 
 def parse_request(header):
+    """
+    Return the uri and a list of headers.
+    """
+
     header = header.split('\r\n')
     first_line = header[0].split()
 
@@ -42,17 +53,16 @@ def parse_request(header):
     except IndexError:
         pass
 
+    if len(first_line) < 3:
+        # For requests that are invalid due missing information:
+        raise ValueError(400, 'Bad Request')
     # When .accept() is interupted to kill the server, method will not have
     # been bound at the point the script continues after .accept() is forced
     # to return, UnboundLocalError needs to be handled where parse_request()
     # is being called.
-    if method != 'GET' or proto != 'HTTP/1.1':
+    elif method != 'GET' or proto != 'HTTP/1.1':
         # Deny non-GET and non-HTTP/1.1 requests.
         raise ValueError(403, 'Forbidden')
-    if not uri:
-        # For requests that are invalid due to being too short:
-        raise ValueError(400, 'Bad Request')
-
 
     # Divide headers by line
     try:
@@ -113,6 +123,7 @@ def main(event):
         except UnboundLocalError as e:
             # Close the connection and server and break out of the loop
             # trying to send anything.
+            print "server: quitting"
             conn.close()
             server_socket.close()
             break
@@ -122,9 +133,7 @@ def main(event):
 
 if __name__ == '__main__':
     event = threading.Event()
-    print event.isSet()
     event.set()
-    print event.isSet()
 
     t = threading.Thread(target=main, args=(event,))
     t.start()
@@ -140,5 +149,5 @@ if __name__ == '__main__':
                 socket.AF_INET,
                 socket.SOCK_STREAM,
                 socket.IPPROTO_IP).connect(('127.0.0.1', 50000))
-            print 'checkcheck'
+            print 'checkout'
             break
