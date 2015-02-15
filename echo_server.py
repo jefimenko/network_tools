@@ -12,24 +12,29 @@ def create_server_socket():
     return server_socket
 
 
+def receive_msg(server_socket, buffsize):
+
+    conn, addr = server_socket.accept()
+    message = ''
+    keep_going = True
+    while keep_going:
+        pkt = conn.recv(buffsize)
+        print repr(pkt)
+        message = '{}{}'.format(message, pkt)
+
+        # For a last packet of buffsize, this loop iterates one more time
+        if len(pkt) < buffsize:
+            keep_going = False
+            print keep_going
+    return conn, addr, message
+
+
 if __name__ == '__main__':
     buffsize = 8
 
     server_socket = create_server_socket()
 
     while True:
-        conn, addr = server_socket.accept()
-
-        message = ''
-        keep_going = True
-        while keep_going:
-            pkt = conn.recv(buffsize)
-            print repr(pkt)
-            message = '{}{}'.format(message, pkt)
-
-            # For a last packet of buffsize, this loop iterates one more time
-            if (len(pkt) < buffsize) or (len(pkt) == 0):
-                keep_going = False
-                print keep_going
+        conn, addr, message = receive_msg(server_socket, buffsize)
         conn.sendall(message)
         conn.close()
