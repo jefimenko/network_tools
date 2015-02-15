@@ -13,7 +13,6 @@ def create_server_socket():
 
 
 def receive_msg(server_socket, buffsize):
-
     conn, addr = server_socket.accept()
     message = ''
     keep_going = True
