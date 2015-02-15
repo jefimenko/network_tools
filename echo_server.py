@@ -40,7 +40,7 @@ def parse_request(header):
     except IndexError:
         pass
 
-    if method != 'GET' or method != 'HTTP/1.1':
+    if method != 'GET' or proto != 'HTTP/1.1':
         # Deny non-GET and non-HTTP/1.1 requests.
         raise ValueError(403, 'Forbidden')
 
@@ -54,7 +54,7 @@ def parse_request(header):
     return uri, headers
 
 
-def response_ok(uri):
+def response_ok():
     response = """\
 HTTP/1.1 200 OK\r\n\
 """
@@ -89,7 +89,8 @@ if __name__ == '__main__':
         try:
             # Parse request
             uri, headers = parse_request(header)
-            formed_response = response_ok(uri)
+            print 'check'
+            formed_response = response_ok()
             # Send the appropriate message
             # OK
         except Exception as e:
