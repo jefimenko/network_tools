@@ -29,7 +29,7 @@ def receive(client_socket):
             listening = False
     print message
     client_socket.close()
-    return reception
+    return message
 
 
 if __name__ == '__main__':
