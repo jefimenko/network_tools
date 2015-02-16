@@ -1,12 +1,16 @@
 from echo_server\
-    import create_server_socket, response_ok, response_error, parse_request
+    import create_server_socket, response_ok, response_error, \
+    parse_request, main, resolve_uri
+import echo_client
 import pytest
+import threading
+import socket
 
 
 def test_ok():
-    assert response_ok() == """\
+    assert """\
 HTTP/1.1 200 OK\r\n\
-"""
+""" in response_ok(None, None)
 
 
 def test_error():
@@ -25,7 +29,7 @@ some body\r\n\
 \r\n\
 some footer\
 """
-    assert parse_request(test_string)[0] == "some_uri"
+    assert parse_request(test_string) == "some_uri"
     # Bad protocol case
     with pytest.raises(ValueError):
         parse_request("POST asdf HTTP/1.1")
@@ -35,3 +39,128 @@ some footer\
     # Something that's not even a request.
     with pytest.raises(ValueError):
         parse_request('just wrong')
+
+
+# Step 2:
+def test_resolve():
+    pass
+
+
+# Functional tests
+# run echo_server
+@pytest.fixture(scope="function")
+def server_starter(request):
+    # Create an flag to end the thread with
+    event = threading.Event()
+    event.set()
+
+    # run echo server_start
+    t = threading.Thread(target=main, args=(event,))
+    t.start()
+
+    return event
+
+
+def test_interaction(server_starter):
+    # event = threading.Event()
+    # event.set()
+
+    # # run echo server_start
+    # t = threading.Thread(target=main, args=(event,))
+    # t.start()
+    event = server_starter
+
+    # Expected
+    client_socket = echo_client.create_client_socket()
+    client_socket.connect(('127.0.0.1', 50000))
+    client_socket.sendall('GET webroot HTTP/1.1\r\n')
+    client_socket.shutdown(socket.SHUT_WR)
+    m = echo_client.receive(client_socket)
+    print "client: " + m
+    assert """\
+HTTP/1.1 200 OK\r\n\
+""" in m
+    client_socket.close()
+
+    # Wrong method
+    client_socket = echo_client.create_client_socket()
+    client_socket.connect(('127.0.0.1', 50000))
+    client_socket.sendall('POST webroot HTTP/1.1\r\n')
+    client_socket.shutdown(socket.SHUT_WR)
+    m = echo_client.receive(client_socket)
+    print "client: " + m
+    assert m == """\
+HTTP/1.1 403 Forbidden\r\n\
+"""
+    client_socket.close()
+
+    # Wrong method and wrong protocol
+    client_socket = echo_client.create_client_socket()
+    client_socket.connect(('127.0.0.1', 50000))
+    client_socket.sendall('POST something HTTP/1.0\r\n')
+    client_socket.shutdown(socket.SHUT_WR)
+    m = echo_client.receive(client_socket)
+    print "client: " + m
+    assert m == """\
+HTTP/1.1 403 Forbidden\r\n\
+"""
+    client_socket.close()
+
+    # Wrong protocol
+    client_socket = echo_client.create_client_socket()
+    client_socket.connect(('127.0.0.1', 50000))
+    client_socket.sendall('GET something HTTP/1.0\r\n')
+    client_socket.shutdown(socket.SHUT_WR)
+    m = echo_client.receive(client_socket)
+    print "client: " + m
+    assert m == """\
+HTTP/1.1 403 Forbidden\r\n\
+"""
+    client_socket.close()
+
+    # Missing information
+    client_socket = echo_client.create_client_socket()
+    client_socket.connect(('127.0.0.1', 50000))
+    client_socket.sendall('GET something\r\n')
+    client_socket.shutdown(socket.SHUT_WR)
+    m = echo_client.receive(client_socket)
+    print "client: " + m
+    assert m == """\
+HTTP/1.1 400 Bad Request\r\n\
+"""
+    client_socket.close()
+
+    client_socket = echo_client.create_client_socket()
+    client_socket.connect(('127.0.0.1', 50000))
+    client_socket.sendall('something HTTP/1.0\r\n')
+    client_socket.shutdown(socket.SHUT_WR)
+    m = echo_client.receive(client_socket)
+    print "client: " + m
+    assert m == """\
+HTTP/1.1 400 Bad Request\r\n\
+"""
+    client_socket.close()
+
+    client_socket = echo_client.create_client_socket()
+    client_socket.connect(('127.0.0.1', 50000))
+    client_socket.sendall('hello')
+    client_socket.shutdown(socket.SHUT_WR)
+    m = echo_client.receive(client_socket)
+    print "client: " + m
+    assert m == """\
+HTTP/1.1 400 Bad Request\r\n\
+"""
+
+    client_socket.close()
+
+    # For some reason having the code below as request.addfinalizer()
+    # causes an IOError with threading
+    print event.isSet()
+    event.clear()
+    print event.isSet()
+    # Force .accept() to return.
+    socket.socket(
+        socket.AF_INET,
+        socket.SOCK_STREAM,
+        socket.IPPROTO_IP).connect(('127.0.0.1', 50000))
+    print 'checkcheck'
