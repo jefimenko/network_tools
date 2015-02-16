@@ -2,11 +2,12 @@ import socket
 import threading
 import os
 import time
+import urllib
 from urlparse import urlparse
 from datetime import datetime
 
 # Full path to /webrootfolder.
-RESOURCES_DIR = os.path.abspath('webroot')
+RESOURCES_DIR = os.path.dirname(os.path.abspath('webroot'))
 
 
 def create_server_socket():
@@ -81,10 +82,12 @@ def response_ok(content_type=None, body=None):
 HTTP/1.1 200 OK\r\n\
 Date: {date}\r\n\
 Content-type: {content_type}\r\n\
+Content-length: {content_length}\r\n\
 \r\n\
 {body}\r\n\
 """.format(date=datetime.utcnow().strftime('%a, %d %b %Y %H:%M:%S GMT'),
            content_type=content_type,
+           content_length=len(str(body)),
            body=body)
     return response
 
@@ -99,25 +102,30 @@ HTTP/1.1 {type} {cause}\r\n\
 def resolve_uri(uri):
     # Form uri into one useable for finding things
     parsed = urlparse(uri)
-    file_name = os.path.split(parsed.path)[1]
-    file_location = os.path.join(RESOURCES_DIR, file_name)
-    # Find thing
+    req_directory, file_name = os.path.split(parsed.path)
+    # Absolute file path
+    req_directory = os.path.abspath(req_directory[1:])
+
+    file_location = os.path.join(req_directory, file_name)
     target, ext = os.path.splitext(file_location)
 
-    # if a directory, return html rep of the directory
-
-    body = target
     content_type = None
     if ext == '.html':
         content_type = 'text/html'
         with open(file_location) as f:
             body = f.read()
-    elif ext == '.txt':
+    elif ext == '.txt' or ext == '.py':
         content_type = 'text/plain'
         with open(file_location) as f:
             body = f.read()
+    elif ext == '.jpg' or ext == '.png':
+        content_type = 'image/gif'
+        body = urllib.urlopen(urllib.pathname2url(file_location)).read()
     elif not ext:
         content_type = 'text/html'
+        body = os.listdir(target)
+    else:
+        raise ValueError(404, 'File Not Found')
 
     return content_type, body
 

@@ -1,6 +1,6 @@
 from echo_server\
     import create_server_socket, response_ok, response_error, \
-    parse_request, main
+    parse_request, main, resolve_uri
 import echo_client
 import pytest
 import threading
@@ -8,9 +8,9 @@ import socket
 
 
 def test_ok():
-    assert response_ok() == """\
+    assert """\
 HTTP/1.1 200 OK\r\n\
-"""
+""" in response_ok(None, None)
 
 
 def test_error():
@@ -41,9 +41,13 @@ some footer\
         parse_request('just wrong')
 
 
+# Step 2:
+def test_resolve():
+    pass
+
+
 # Functional tests
 # run echo_server
-
 @pytest.fixture(scope="function")
 def server_starter(request):
     # Create an flag to end the thread with
@@ -57,30 +61,31 @@ def server_starter(request):
     return event
 
 
-def test_interaction():
-    event = threading.Event()
-    event.set()
+def test_interaction(server_starter):
+    # event = threading.Event()
+    # event.set()
 
-    # run echo server_start
-    t = threading.Thread(target=main, args=(event,))
-    t.start()
+    # # run echo server_start
+    # t = threading.Thread(target=main, args=(event,))
+    # t.start()
+    event = server_starter
 
     # Expected
     client_socket = echo_client.create_client_socket()
     client_socket.connect(('127.0.0.1', 50000))
-    client_socket.sendall('GET something HTTP/1.1\r\n')
+    client_socket.sendall('GET webroot HTTP/1.1\r\n')
     client_socket.shutdown(socket.SHUT_WR)
     m = echo_client.receive(client_socket)
     print "client: " + m
-    assert m == """\
+    assert """\
 HTTP/1.1 200 OK\r\n\
-"""
+""" in m
     client_socket.close()
 
     # Wrong method
     client_socket = echo_client.create_client_socket()
     client_socket.connect(('127.0.0.1', 50000))
-    client_socket.sendall('POST something HTTP/1.1\r\n')
+    client_socket.sendall('POST webroot HTTP/1.1\r\n')
     client_socket.shutdown(socket.SHUT_WR)
     m = echo_client.receive(client_socket)
     print "client: " + m
@@ -148,6 +153,8 @@ HTTP/1.1 400 Bad Request\r\n\
 
     client_socket.close()
 
+    # For some reason having the code below as request.addfinalizer()
+    # causes an IOError with threading
     print event.isSet()
     event.clear()
     print event.isSet()
