@@ -1,6 +1,6 @@
 import socket
 import threading
-import os
+import os, sys
 import time
 import urllib
 from urlparse import urlparse
@@ -35,13 +35,13 @@ def receive_msg(server_socket, buffsize):
     keep_going = True
     while keep_going:
         pkt = conn.recv(buffsize)
-        print 'server: ' + repr(pkt)
+        sys.stdout.write('server: ' + repr(pkt))
         message = '{}{}'.format(message, pkt)
 
         # For a last packet of buffsize, this loop iterates one more time
         if len(pkt) < buffsize:
             keep_going = False
-            print keep_going
+            sys.stdout.write(str(keep_going))
 
     return conn, addr, message
 
@@ -95,7 +95,12 @@ Content-length: {content_length}\r\n\
 def response_error(e):
     response = """\
 HTTP/1.1 {type} {cause}\r\n\
-""".format(type=e[0], cause=e[1])
+Date: {date}\r\n\
+\r\n\
+{type} {cause}\r\n\
+""".format(type=e[0],
+           cause=e[1],
+           date=datetime.utcnow().strftime('%a, %d %b %Y %H:%M:%S GMT'))
     return response
 
 
@@ -108,6 +113,9 @@ def resolve_uri(uri):
 
     file_location = os.path.join(req_directory, file_name)
     target, ext = os.path.splitext(file_location)
+
+    if not os.path.exists(file_location):
+        raise ValueError(404, 'File Not Found')
 
     content_type = None
     if ext == '.html':
@@ -123,7 +131,10 @@ def resolve_uri(uri):
         body = urllib.urlopen(urllib.pathname2url(file_location)).read()
     elif not ext:
         content_type = 'text/html'
-        body = os.listdir(target)
+        body = '<p>{}</p>'.format(os.path.split(target)[1])
+        for item in os.listdir(target):
+            body = '{}<p><a href="{}">{}</a></p>'.format(
+                body, item, item)
     else:
         raise ValueError(404, 'File Not Found')
 
@@ -185,15 +196,15 @@ if __name__ == '__main__':
 
     while True:
         try:
-            time.sleep(.5)
+            time.sleep(.2)
         except KeyboardInterrupt:
             event.clear()
-            print 'event: ' + str(event.isSet())
+            sys.stdout.write('event: ' + str(event.isSet()))
             # Force .accept() to return.
+            print 'checking out'
             socket.socket(
                 socket.AF_INET,
                 socket.SOCK_STREAM,
                 socket.IPPROTO_IP).connect(('127.0.0.1', 50000))
 
-            print 'checkout\n'
             break
