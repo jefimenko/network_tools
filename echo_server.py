@@ -2,6 +2,8 @@ import socket
 import threading
 import os
 import time
+from urlparse import urlparse
+from datetime import datetime
 
 # Full path to /webrootfolder.
 RESOURCES_DIR = os.path.abspath('webroot')
@@ -74,10 +76,16 @@ def parse_request(header):
     return uri
 
 
-def response_ok():
+def response_ok(content_type=None, body=None):
     response = """\
 HTTP/1.1 200 OK\r\n\
-"""
+Date: {date}\r\n\
+Content-type: {content_type}\r\n\
+\r\n\
+{body}\r\n\
+""".format(date=datetime.utcnow().strftime('%a, %d %b %Y %H:%M:%S GMT'),
+           content_type=content_type,
+           body=body)
     return response
 
 
@@ -88,8 +96,34 @@ HTTP/1.1 {type} {cause}\r\n\
     return response
 
 
+def resolve_uri(uri):
+    # Form uri into one useable for finding things
+    parsed = urlparse(uri)
+    file_name = os.path.split(parsed.path)[1]
+    file_location = os.path.join(RESOURCES_DIR, file_name)
+    # Find thing
+    target, ext = os.path.splitext(file_location)
+
+    # if a directory, return html rep of the directory
+
+    body = target
+    content_type = None
+    if ext == '.html':
+        content_type = 'text/html'
+        with open(file_location) as f:
+            body = f.read()
+    elif ext == '.txt':
+        content_type = 'text/plain'
+        with open(file_location) as f:
+            body = f.read()
+    elif not ext:
+        content_type = 'text/html'
+
+    return content_type, body
+
+
 def main(event):
-    buffsize = 8
+    buffsize = 64
 
     server_socket = create_server_socket()
 
@@ -111,7 +145,8 @@ def main(event):
         try:
             # Parse request
             uri = parse_request(header)
-            formed_response = response_ok()
+            content_type, body = resolve_uri(uri)
+            formed_response = response_ok(content_type, body)
             # Send the appropriate message
             # OK
         except ValueError as e:
