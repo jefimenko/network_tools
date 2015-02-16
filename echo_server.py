@@ -108,11 +108,17 @@ def resolve_uri(uri):
     # Form uri into one useable for finding things
     parsed = urlparse(uri)
     req_directory, file_name = os.path.split(parsed.path)
-    # Absolute file path
+    print req_directory
+    print file_name
+    # Relative file path
     req_directory = os.path.abspath(req_directory[1:])
+    print req_directory
 
     file_location = os.path.join(req_directory, file_name)
+    print file_location
     target, ext = os.path.splitext(file_location)
+    print target
+    print ext
 
     if not os.path.exists(file_location):
         raise ValueError(404, 'File Not Found')
@@ -131,10 +137,12 @@ def resolve_uri(uri):
         body = urllib.urlopen(urllib.pathname2url(file_location)).read()
     elif not ext:
         content_type = 'text/html'
-        body = '<p>{}</p>'.format(os.path.split(target)[1])
+        body = '<h1>{}</h1>'.format(os.path.split(target)[1])
         for item in os.listdir(target):
-            body = '{}<p><a href="{}">{}</a></p>'.format(
-                body, item, item)
+            body = '{}<p>{}</p>'.format(
+                body, item)
+            # body = '{}<p><a href="{}">{}</a></p>'.format(
+            #     body, os.path.join(target, item), item)
     else:
         raise ValueError(404, 'File Not Found')
 
