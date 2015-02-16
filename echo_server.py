@@ -43,13 +43,14 @@ def receive_msg(server_socket, buffsize):
     return conn, addr, message
 
 
-def parse_request(first_line):
+def parse_request(header):
     """
     Return the uri.
     """
+    header = header.split('\r\n')
+    first_line = header[0]
 
     first_line = first_line.split(' ')
-    print 'first_line: ' + repr(first_line)
 
     # Break up first_line
     try:
@@ -58,8 +59,6 @@ def parse_request(first_line):
         proto = first_line[2]
     except IndexError:
         pass
-
-    print repr(first_line)
 
     if len(first_line) < 3:
         # For requests that are invalid due missing information:
@@ -97,30 +96,21 @@ def main(event):
     while event.isSet():
         conn, addr, message = receive_msg(server_socket, buffsize)
 
-        print "message pre: " + repr(message)
-        # Cut up message into header, body and footer.
-        parts = message.split('\r\n\r\n')
+        # Cut up message
+        message = message.split('\r\n\r\n')
         try:
             # All assignments up until a line that causes an exception
             # persist. Only bind symbols to parts of the request that
             # exist.
-            header = parts[0]
-            body = parts[1]
-            footer = parts[2]
+            header = message[0]
+            body = message[1]
+            footer = message[2]
         except IndexError:
             pass
 
-        print "message split: " + repr(message)
-
         try:
-            # Divide header
-            lines = header.split('\r\n')
-
-            print 'head: ' + repr(header)
-            print 'lines: ' + repr(lines)
-
             # Parse request
-            uri = parse_request(lines[0])
+            uri = parse_request(header)
             formed_response = response_ok()
             # Send the appropriate message
             # OK
@@ -128,7 +118,7 @@ def main(event):
             # Errors
             print e[0]
             print e[1]
-            print 'type: ' + str(type(e))
+            print type(e)
             formed_response = response_error(e)
         except UnboundLocalError as e:
             # Close the connection and server and break out of the loop
@@ -141,7 +131,6 @@ def main(event):
         conn.close()
 
     server_socket.close()
-    print 'server returning'
 
 
 if __name__ == '__main__':

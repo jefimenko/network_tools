@@ -29,7 +29,7 @@ some body\r\n\
 \r\n\
 some footer\
 """
-    assert parse_request(test_string)[0] == "some_uri"
+    assert parse_request(test_string) == "some_uri"
     # Bad protocol case
     with pytest.raises(ValueError):
         parse_request("POST asdf HTTP/1.1")
@@ -145,6 +145,7 @@ HTTP/1.1 400 Bad Request\r\n\
     assert m == """\
 HTTP/1.1 400 Bad Request\r\n\
 """
+
     client_socket.close()
 
     print event.isSet()
