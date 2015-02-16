@@ -1,5 +1,10 @@
 import socket
 import threading
+import os
+import time
+
+# Full path to /webrootfolder.
+RESOURCES_DIR = os.path.abspath('webroot')
 
 
 def create_server_socket():
@@ -34,16 +39,17 @@ def receive_msg(server_socket, buffsize):
         if len(pkt) < buffsize:
             keep_going = False
             print keep_going
+
     return conn, addr, message
 
 
-def parse_request(header):
+def parse_request(first_line):
     """
-    Return the uri and a list of headers.
+    Return the uri.
     """
 
-    header = header.split('\r\n')
-    first_line = header[0].split()
+    first_line = first_line.split(' ')
+    print 'first_line: ' + repr(first_line)
 
     # Break up first_line
     try:
@@ -52,6 +58,8 @@ def parse_request(header):
         proto = first_line[2]
     except IndexError:
         pass
+
+    print repr(first_line)
 
     if len(first_line) < 3:
         # For requests that are invalid due missing information:
@@ -64,14 +72,7 @@ def parse_request(header):
         # Deny non-GET and non-HTTP/1.1 requests.
         raise ValueError(403, 'Forbidden')
 
-    # Divide headers by line
-    try:
-        headers = []
-        for line in header[1:]:
-            headers.append(line)
-    except IndexError:
-        pass
-    return uri, headers
+    return uri
 
 
 def response_ok():
@@ -96,21 +97,30 @@ def main(event):
     while event.isSet():
         conn, addr, message = receive_msg(server_socket, buffsize)
 
-        # Cut up message
-        message = message.split('\r\n\r\n')
+        print "message pre: " + repr(message)
+        # Cut up message into header, body and footer.
+        parts = message.split('\r\n\r\n')
         try:
             # All assignments up until a line that causes an exception
             # persist. Only bind symbols to parts of the request that
             # exist.
-            header = message[0]
-            body = message[1]
-            footer = message[2]
+            header = parts[0]
+            body = parts[1]
+            footer = parts[2]
         except IndexError:
             pass
 
+        print "message split: " + repr(message)
+
         try:
+            # Divide header
+            lines = header.split('\r\n')
+
+            print 'head: ' + repr(header)
+            print 'lines: ' + repr(lines)
+
             # Parse request
-            uri, headers = parse_request(header)
+            uri = parse_request(lines[0])
             formed_response = response_ok()
             # Send the appropriate message
             # OK
@@ -118,7 +128,7 @@ def main(event):
             # Errors
             print e[0]
             print e[1]
-            print type(e)
+            print 'type: ' + str(type(e))
             formed_response = response_error(e)
         except UnboundLocalError as e:
             # Close the connection and server and break out of the loop
@@ -130,6 +140,9 @@ def main(event):
         conn.sendall(formed_response)
         conn.close()
 
+    server_socket.close()
+    print 'server returning'
+
 
 if __name__ == '__main__':
     event = threading.Event()
@@ -140,14 +153,15 @@ if __name__ == '__main__':
 
     while True:
         try:
-            pass
+            time.sleep(.5)
         except KeyboardInterrupt:
             event.clear()
-            print event.isSet()
+            print 'event: ' + str(event.isSet())
             # Force .accept() to return.
             socket.socket(
                 socket.AF_INET,
                 socket.SOCK_STREAM,
                 socket.IPPROTO_IP).connect(('127.0.0.1', 50000))
-            print 'checkout'
+
+            print 'checkout\n'
             break
