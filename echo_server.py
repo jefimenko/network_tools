@@ -1,6 +1,7 @@
 import socket
 import threading
-import os, sys
+import os
+import sys
 import time
 import urllib
 from urlparse import urlparse
