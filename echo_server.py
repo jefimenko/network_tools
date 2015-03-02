@@ -150,10 +150,10 @@ def resolve_uri(uri):
     return content_type, body
 
 
-def main(event):
+def main(event, socket):
     buffsize = 64
 
-    server_socket = create_server_socket()
+    server_socket = socket
 
     while event.isSet():
         conn, addr, message = receive_msg(server_socket, buffsize)
@@ -200,7 +200,7 @@ if __name__ == '__main__':
     event = threading.Event()
     event.set()
 
-    t = threading.Thread(target=main, args=(event,))
+    t = threading.Thread(target=main, args=(event, create_server_socket()))
     t.start()
 
     while True:
