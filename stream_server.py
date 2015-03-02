@@ -68,7 +68,7 @@ def main(socket):
 
 if __name__ == '__main__':
     # Create 10 sockets in main loops
-    import pdb; pdb.set_trace()
+    # import pdb; pdb.set_trace()
     socket_mains = [gevent.spawn(main, create_socket(port)) for port in range(10)]
     # Concurrently run the loops
     gevent.joinall(socket_mains)
